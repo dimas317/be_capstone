@@ -25,29 +25,36 @@ export async function getProfile(req, res, next) {
 //UPDATE PROFILE BY ID
 export async function updateProfile(req, res) {
   try {
-    const { username, phone_number, email, domisili, status_mahasiswa, jenis_kelamin } = req.body;
+    const incomingData = req.body;
 
-    if (!username || !phone_number || !email) {
-      return res.status(400).json({ message: "All fields are required" });
+    // Ambil data user lama
+    const oldUser = await findUserById(req.user.id);
+    if (!oldUser) {
+      return res.status(404).json({ message: "User not found" });
     }
 
-    const updatedUser = await updateUserById(req.user.id, {
-      username,
-      phone_number,
-      email,
-      domisili,
-      status_mahasiswa,
-      jenis_kelamin 
-    });
+    // Gabungkan data lama + data baru (partial update)
+    const updatedData = {
+      username: incomingData.username ?? oldUser.username,
+      phone_number: incomingData.phone_number ?? oldUser.phone_number,
+      email: incomingData.email ?? oldUser.email,
+      domisili: incomingData.domisili ?? oldUser.domisili,
+      status_mahasiswa: incomingData.status_mahasiswa ?? oldUser.status_mahasiswa,
+      jenis_kelamin: incomingData.jenis_kelamin ?? oldUser.jenis_kelamin,
+    };
+
+    const updatedUser = await updateUserById(req.user.id, updatedData);
 
     res.json({
       message: "Profile updated successfully",
-      user: updatedUser,
+      user: updatedUser
     });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error while updating profile" });
   }
 }
+
 
 //UPDATE PASSWORD BY ID
 export async function updatePassword(req, res) {

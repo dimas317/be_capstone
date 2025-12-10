@@ -1,5 +1,12 @@
 import pool from "../config/db.js";
 
+export async function getAllTransactions() {
+  const result = await pool.query(
+    "SELECT * FROM transactions ORDER BY created_at DESC"
+  );
+  return result.rows;
+}
+
 export async function getTransactionsByUser(user_id) {
   const result = await pool.query(
     "SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC",

@@ -1,16 +1,21 @@
 import pkg from "pg";
-import dotenv from "dotenv";
-dotenv.config();
-
 const { Pool } = pkg;
 
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// ✅ Singleton pool (AMAN untuk Local + Vercel)
+let pool;
 
-pool
-  .connect()
-  .then(() => console.log("✅ PostgreSQL Connected"))
-  .catch((err) => console.error("❌ DB Connection Error:", err));
+if (!global._pgPool) {
+  global._pgPool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+    max: 5,                   // batasi koneksi
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 2000,
+  });
+}
+
+pool = global._pgPool;
 
 export default pool;

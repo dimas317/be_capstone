@@ -1,5 +1,13 @@
-import { getTransactionsByUser, createTransaction, updateTransactionById, deleteTransactionById } from '../models/Transaction.js';
+import { getAllTransactions, getTransactionsByUser, createTransaction, updateTransactionById, deleteTransactionById } from '../models/Transaction.js';
 
+export async function listAllTransactions(req, res, next) {
+  try {
+    const rows = await getAllTransactions();
+    res.json({ transactions: rows });
+  } catch (err) {
+    next(err);
+  }
+}
 
 export async function listTransactions(req, res, next) {
   try {

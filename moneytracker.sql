@@ -7,7 +7,8 @@ create table users (
 	fullname VARCHAR(255) NOT NULL,
 	balance NUMERIC(12, 2) DEFAULT 0 NOT NULL,
 	created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    level 
 );
 
 create table transactions (
@@ -103,29 +104,45 @@ FOR EACH ROW
 EXECUTE FUNCTION update_badge();
 
 CREATE OR REPLACE FUNCTION update_badge()
-RETURNS TRIGGER AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+AS $$
 BEGIN
-    -- Jika level tidak berubah, jangan lakukan apa-apa
-    IF NEW.level = OLD.level THEN
+    -- Jika fungsi dipanggil saat INSERT (OLD tidak ada)
+    IF TG_OP = 'INSERT' THEN
+        INSERT INTO badges (user_id, name, description, awarded_at)
+        VALUES (
+            NEW.id,
+            'Level ' || NEW.level || ' Badge',
+            'Badge untuk level ' || NEW.level,
+            NOW()
+        );
         RETURN NEW;
     END IF;
 
-    -- Hapus badge lama user (opsional, jika kamu hanya ingin 1 badge per user)
-    DELETE FROM badges
-    WHERE user_id = NEW.id;
+    -- Jika dipanggil saat UPDATE level
+    IF TG_OP = 'UPDATE' THEN
+        
+        IF NEW.level = OLD.level THEN
+            RETURN NEW; -- tidak berubah, tidak perlu buat badge
+        END IF;
 
-    -- Tambah badge baru sesuai level
-    INSERT INTO badges (user_id, name, description, awarded_at)
-    VALUES (
-        NEW.id,
-        'Level ' || NEW.level || ' Badge',
-        'Badge untuk level ' || NEW.level,
-        NOW()
-    );
+        -- Hapus badge lama
+        DELETE FROM badges WHERE user_id = NEW.id;
+
+        -- Buat badge baru
+        INSERT INTO badges (user_id, name, description, awarded_at)
+        VALUES (
+            NEW.id,
+            'Level ' || NEW.level || ' Badge',
+            'Badge untuk level ' || NEW.level,
+            NOW()
+        );
+    END IF;
 
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 
 CREATE OR REPLACE FUNCTION update_user_level_based_on_age()
@@ -134,26 +151,26 @@ DECLARE
     account_age INT;
     new_level INT;
 BEGIN
-    -- Hitung umur akun user berdasarkan created_at user
-    SELECT DATE_PART('day', NOW() - u.created_at)
+    -- Hitung umur akun user berdasarkan created_at
+    SELECT COALESCE(FLOOR(EXTRACT(EPOCH FROM (NOW() - u.created_at)) / 86400), 0)
     INTO account_age
     FROM users u
     WHERE u.id = NEW.user_id;
 
     -- Tentukan level berdasarkan umur akun
-    IF account_age BETWEEN 1 AND 30 THEN
-        new_level := 1;
+    IF account_age BETWEEN 0 AND 30 THEN
+        new_level := 1;  -- Beginner
     ELSIF account_age BETWEEN 31 AND 60 THEN
-        new_level := 2;
+        new_level := 2;  -- Bronze
     ELSIF account_age BETWEEN 61 AND 90 THEN
-        new_level := 3;
+        new_level := 3;  -- Silver
     ELSIF account_age BETWEEN 91 AND 120 THEN
-        new_level := 4;
+        new_level := 4;  -- Gold
     ELSE
-        new_level := 5;
+        new_level := 5;  -- Platinum
     END IF;
 
-    -- Update level
+    -- Update level user
     UPDATE users
     SET level = new_level
     WHERE id = NEW.user_id;

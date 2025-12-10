@@ -36,20 +36,30 @@ export async function createUser({ username, phone_number, email, password}) {
 }
 
 // Update user berdasarkan id
-export async function updateUserById(id, { username, phone_number, email, domisili, status_mahasiswa, jenis_kelamin }) {
-  const result = await pool.query(
-    `UPDATE users 
-     SET username = $1,
-         phone_number = $2,
-         email = $3,
-         domisili = $4,
-         status_mahasiswa = $5,
-         jenis_kelamin = $6,
-         updated_at = NOW()
-     WHERE id = $7
-     RETURNING *`,
-    [username, phone_number, email, domisili, status_mahasiswa, jenis_kelamin, id]
-  );
+export async function updateUserById(id, fields) {
+  const cols = [];
+  const values = [];
+  let i = 1;
+
+  for (const key in fields) {
+    cols.push(`${key} = $${i}`);
+    values.push(fields[key]);
+    i++;
+  }
+
+  // Tambahkan updated_at
+  cols.push(`updated_at = NOW()`);
+
+  const query = `
+    UPDATE users
+    SET ${cols.join(", ")}
+    WHERE id = $${i}
+    RETURNING *;
+  `;
+
+  values.push(id);
+
+  const result = await pool.query(query, values);
   return result.rows[0];
 }
 

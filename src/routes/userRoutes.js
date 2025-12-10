@@ -1,6 +1,5 @@
 import express from 'express';
 import { 
-  getUser, 
   getProfile, 
   updateProfile, 
   updatePassword, 
@@ -12,9 +11,6 @@ import { verifyToken } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
-
-// GET all or user basic
-router.get("/", getUser);
 
 // GET profile by ID
 router.get("/:id", verifyToken, getProfile);
