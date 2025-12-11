@@ -37,14 +37,6 @@ CREATE TABLE categories (
     ))
 );
 
-create table badges (
-	id SERIAL PRIMARY KEY,
-	user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-	name VARCHAR(255) NOT NULL,
-	description TEXT,
-	awarded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE OR REPLACE FUNCTION update_user_balance(userId INT)
 RETURNS VOID AS $$
 BEGIN
@@ -82,80 +74,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION update_user_level_based_on_age()
-RETURNS TRIGGER AS $$
-DECLARE
-    account_age INT;
-    new_level INT;
-BEGIN
-    -- Hitung umur akun user berdasarkan created_at
-    SELECT COALESCE(FLOOR(EXTRACT(EPOCH FROM (NOW() - u.created_at)) / 86400), 0)
-    INTO account_age
-    FROM users u
-    WHERE u.id = NEW.user_id;
-
-    -- Tentukan level berdasarkan umur akun
-    IF account_age BETWEEN 0 AND 30 THEN
-        new_level := 1;  -- Beginner
-    ELSIF account_age BETWEEN 31 AND 60 THEN
-        new_level := 2;  -- Bronze
-    ELSIF account_age BETWEEN 61 AND 90 THEN
-        new_level := 3;  -- Silver
-    ELSIF account_age BETWEEN 91 AND 120 THEN
-        new_level := 4;  -- Gold
-    ELSE
-        new_level := 5;  -- Platinum
-    END IF;
-
-    -- Update level user
-    UPDATE users
-    SET level = new_level
-    WHERE id = NEW.user_id;
-
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION update_badge()
-RETURNS trigger
-LANGUAGE plpgsql
-AS $$
-BEGIN
-    -- Jika fungsi dipanggil saat INSERT (OLD tidak ada)
-    IF TG_OP = 'INSERT' THEN
-        INSERT INTO badges (user_id, name, description, awarded_at)
-        VALUES (
-            NEW.id,
-            'Level ' || NEW.level || ' Badge',
-            'Badge untuk level ' || NEW.level,
-            NOW()
-        );
-        RETURN NEW;
-    END IF;
-
-    -- Jika dipanggil saat UPDATE level
-    IF TG_OP = 'UPDATE' THEN
-        
-        IF NEW.level = OLD.level THEN
-            RETURN NEW; -- tidak berubah, tidak perlu buat badge
-        END IF;
-
-        -- Hapus badge lama
-        DELETE FROM badges WHERE user_id = NEW.id;
-
-        -- Buat badge baru
-        INSERT INTO badges (user_id, name, description, awarded_at)
-        VALUES (
-            NEW.id,
-            'Level ' || NEW.level || ' Badge',
-            'Badge untuk level ' || NEW.level,
-            NOW()
-        );
-    END IF;
-
-    RETURN NEW;
-END;
-$$;
 
 CREATE TRIGGER trg_insert_transaction
 AFTER INSERT ON transactions
@@ -171,26 +89,6 @@ CREATE TRIGGER trg_delete_transaction
 AFTER DELETE ON transactions
 FOR EACH ROW
 EXECUTE FUNCTION trigger_update_user_balance();
-
-CREATE TRIGGER trg_update_user_level_on_transaction
-AFTER INSERT ON transactions
-FOR EACH ROW
-EXECUTE FUNCTION update_user_level_based_on_age();
-
-CREATE TRIGGER trg_insert_badge_on_user_register
-AFTER INSERT ON users
-FOR EACH ROW
-EXECUTE FUNCTION update_badge();
-
-CREATE TRIGGER trg_update_badge_after_level_change
-AFTER UPDATE OF level ON users
-FOR EACH ROW
-EXECUTE FUNCTION update_badge();
-
-CREATE TRIGGER trg_update_badge_on_level_change
-AFTER UPDATE OF level ON users
-FOR EACH ROW
-EXECUTE FUNCTION update_badge();
 
 SELECT 
     event_object_table AS table_name,
@@ -223,9 +121,6 @@ ALTER DATABASE neondb SET timezone TO 'Asia/Jakarta';
 ALTER TABLE users
   ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC',
   ALTER COLUMN updated_at TYPE timestamptz USING updated_at AT TIME ZONE 'UTC';
-
-ALTER TABLE badges 
-  ALTER COLUMN awarded_at TYPE timestamptz USING awarded_at AT TIME ZONE 'UTC';
 
 ALTER TABLE transactions 
   ALTER COLUMN created_at TYPE timestamptz USING created_at AT TIME ZONE 'UTC',

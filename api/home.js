@@ -11,7 +11,6 @@ import userRoutes from '../src/routes/userRoutes.js';
 import transactionRoutes from '../src/routes/transactionRoutes.js';
 import dashboardRoutes from '../src/routes/dashboardRoutes.js';
 import statsRoutes from '../src/routes/statsRoutes.js';
-import badgeRoutes from '../src/routes/badgeRoutes.js';
 import mainRoutes from '../src/routes/mainRoutes.js';
 import { errorHandler } from '../src/middleware/errorHandler.js';
 
@@ -53,7 +52,6 @@ app.use("/api/users", userRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/stats", statsRoutes);
-app.use("/api/badges", badgeRoutes);
 app.use("/api/main", mainRoutes);
 
 // testing route
@@ -61,13 +59,11 @@ app.get("/", async (req, res) => {
   try {
     const users = await pool.query("SELECT * FROM users ORDER BY id ASC");
     const transactions = await pool.query("SELECT * FROM transactions ORDER BY id ASC");
-    const badges = await pool.query("SELECT * FROM badges ORDER BY id ASC");
 
     res.json({
       message: "MoneyTracker API is running...",
       users: users.rows,
       transactions: transactions.rows,
-      badges: badges.rows
     });
   } catch (error) {
     console.error(error);

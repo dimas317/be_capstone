@@ -1,3 +1,4 @@
+import "./src/config/db.js";
 import app from "./api/home.js";
 import dotenv from "dotenv";
 dotenv.config();

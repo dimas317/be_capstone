@@ -1,25 +1,10 @@
 import pool from "../config/db.js";
 
-// Ambil semua user
-export async function getAllUsers() {
-  const result = await pool.query("SELECT * FROM users ORDER BY created_at DESC");
-  return result.rows;
-}
-
 // Cari user berdasarkan email
 export async function findUserByEmail(email) {
   const result = await pool.query(
     "SELECT * FROM users WHERE email = $1 LIMIT 1",
     [email]
-  );
-  return result.rows[0];
-}
-
-// Cari user berdasarkan id
-export async function findUserById(id) {
-  const result = await pool.query(
-    "SELECT * FROM users WHERE id = $1 LIMIT 1",
-    [id]
   );
   return result.rows[0];
 }
@@ -31,6 +16,21 @@ export async function createUser({ username, phone_number, email, password}) {
      VALUES ($1, $2, $3, $4)
      RETURNING *`,
     [username, phone_number, email, password]
+  );
+  return result.rows[0];
+}
+
+// Ambil semua user
+export async function getAllUsers() {
+  const result = await pool.query("SELECT * FROM users ORDER BY created_at DESC");
+  return result.rows;
+}
+
+// Cari user berdasarkan id
+export async function findUserById(id) {
+  const result = await pool.query(
+    "SELECT * FROM users WHERE id = $1 LIMIT 1",
+    [id]
   );
   return result.rows[0];
 }

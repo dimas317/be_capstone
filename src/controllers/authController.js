@@ -1,8 +1,6 @@
-import pool from '../config/db.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
-import { v4 as uuidv4 } from 'uuid';
 import { findUserByEmail, createUser } from '../models/userModel.js';
 dotenv.config();
 
