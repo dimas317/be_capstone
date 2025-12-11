@@ -1,6 +1,7 @@
 import { getAllUsers, findUserById, updateUserById, updatePasswordById, updateProfilePictureById, deleteUserById } from '../models/userModel.js';
 import bcrypt from 'bcryptjs';
 import cloudinary from '../config/cloudinary.js';
+import pool from '../config/db.js';
 
 // GET all users
 export async function getUser(req, res) {
@@ -19,6 +20,38 @@ export async function getProfile(req, res, next) {
     res.json({ user });
   } catch (err) {
     next(err);
+  }
+}
+
+// GET USER STATS
+export async function getUserStats(req, res) {
+  try {
+    const userId = req.user.id;
+
+    // Total income
+    const incomeResult = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) AS income FROM transactions WHERE user_id = $1 AND type = 'income'",
+      [userId]
+    );
+
+    // Total expense
+    const expenseResult = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) AS expense FROM transactions WHERE user_id = $1 AND type = 'expense'",
+      [userId]
+    );
+
+    const income = Number(incomeResult.rows[0].income);
+    const expense = Number(expenseResult.rows[0].expense);
+
+    res.json({
+      income,
+      expense,
+      balance: income - expense
+    });
+
+  } catch (error) {
+    console.error("Error fetching user stats:", error);
+    res.status(500).json({ message: "Server error" });
   }
 }
 

@@ -54,7 +54,7 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/stats", statsRoutes);
 app.use("/api/badges", badgeRoutes);
-app.use("/api/all", mainRoutes);
+app.use("/api/main", mainRoutes);
 
 // testing route
 app.get("/", async (req, res) => {
@@ -78,6 +78,5 @@ app.get("/", async (req, res) => {
 // error handler
 app.use(errorHandler);
 
-// ⛔ TIDAK ADA app.listen!!
 
 export default app;

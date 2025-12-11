@@ -1,5 +1,6 @@
 import express from 'express';
 import { 
+  getUserStats,
   getProfile, 
   updateProfile, 
   updatePassword, 
@@ -11,6 +12,9 @@ import { verifyToken } from '../middleware/auth.js';
 import { upload } from '../middleware/upload.js';
 
 const router = express.Router();
+
+// GET profile stats
+router.get("/me/stats", verifyToken, getUserStats);
 
 // GET profile by ID
 router.get("/:id", verifyToken, getProfile);
