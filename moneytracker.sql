@@ -7,7 +7,6 @@ CREATE TABLE users (
     balance NUMERIC(12, 2) DEFAULT 0 NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    level INTEGER default 1,
     image VARCHAR(255),
     domisili TEXT,
     status_mahasiswa varchar (50)check (status_mahasiswa in ('Aktif', 'Non-Aktif')),
